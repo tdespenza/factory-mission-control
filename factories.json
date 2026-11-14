@@ -2,8 +2,8 @@
   "factories": [
     {
       "name": "cendryva",
-      "repository": "Cendryva/cendryva",
-      "codebase": "Cendryva/cendryva",
+      "repository": "cendryva/cendryva",
+      "codebase": "cendryva/cendryva",
       "console": "http://localhost:3090"
     },
     {
