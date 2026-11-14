@@ -616,8 +616,22 @@ describe('the rules the live queries restate, which they may not call a function
       'work-orders': 1,
       'product-documents': 1,
     };
+    // work-orders states the delivery branches as a joined set, not EXISTS inside FILTER: Neon
+    // Realtime rejects a correlated EXISTS in an aggregate FILTER. Its two branches are counted below.
+    const joined = new Set(['work-orders']);
+    const DELIVERED_SET =
+      /LEFT JOIN \(\s*SELECT pi\.factory, pi\.issue_number FROM mc\.pull_request_issues pi\s+JOIN mc\.pull_requests p ON p\.factory = pi\.factory AND p\.number = pi\.pr_number\s+WHERE pi\.factory = \$1 AND p\.merged_at IS NOT NULL\s+UNION\s+SELECT rf\.factory, rf\.issue_number FROM mc\.pull_request_references rf\s+JOIN mc\.pull_requests p ON p\.factory = rf\.factory AND p\.number = rf\.pr_number\s+WHERE rf\.factory = \$1 AND p\.merged_at IS NOT NULL\s*\) mg ON mg\.factory = i\.factory AND mg\.issue_number = i\.number/g;
     for (const [name, sql] of queries) {
       const expected = copies[name] ?? 0;
+      if (joined.has(name)) {
+        expect([name, count(sql, NOT_DELIVERED), count(sql, DELIVERED_SET)]).toEqual([
+          name,
+          expected,
+          expected,
+        ]);
+        expect([name, count(sql, DELIVERED), count(sql, BY_CLOSING)]).toEqual([name, 0, 0]);
+        continue;
+      }
       expect([
         name,
         count(sql, NOT_DELIVERED),

@@ -19,8 +19,8 @@ CROSS JOIN LATERAL (
     array_agg(coalesce(least(gp.title, gi.title), '') ORDER BY d.depends_on) AS blocker_titles
   FROM mc.issue_dependencies d
   -- Gone: closed or merged. A number that is not mirrored is not known to be gone. Neon Realtime rejects a
-  -- correlated reference inside a UNION ALL, so the pull request and the issue are two laterals;
-  -- greatest and least skip NULLs, which gives the max and min over both.
+  -- correlated reference inside a UNION ALL, so the pull request and the issue are two laterals,
+  -- and greatest and least skip NULLs, which gives the max and min over both.
   LEFT JOIN LATERAL (
     SELECT max(coalesce(p.merged_at, p.closed_at, p.updated_at)) AS at, min(p.title) AS title
     FROM mc.pull_requests p

@@ -12,7 +12,7 @@ SELECT
 FROM mc.issue_labels wo
 JOIN mc.issues i ON i.factory = wo.factory AND i.number = wo.issue_number
 -- Neon Realtime rejects a correlated EXISTS inside an aggregate FILTER, so the issues a merged pull
--- request names (Closes or Refs) are joined in as a set; UNION keeps one row per issue.
+-- request names (Closes or Refs) are joined in as a set, and UNION keeps one row per issue.
 LEFT JOIN (
   SELECT pi.factory, pi.issue_number FROM mc.pull_request_issues pi
   JOIN mc.pull_requests p ON p.factory = pi.factory AND p.number = pi.pr_number
