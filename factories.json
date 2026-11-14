@@ -1,15 +1,33 @@
 {
   "factories": [
     {
-      "name": "mission-control",
-      "repository": "coleam00/factory-mission-control",
-      "codebase": "coleam00/factory-mission-control",
+      "name": "cendryva",
+      "repository": "Cendryva/cendryva",
+      "codebase": "Cendryva/cendryva",
       "console": "http://localhost:3090"
     },
     {
-      "name": "north-star",
-      "repository": "coleam00/north-star-godot",
-      "codebase": "coleam00/north-star-godot",
+      "name": "monorepo",
+      "repository": "Prezynt/monorepo",
+      "codebase": "Prezynt/monorepo",
+      "console": "http://localhost:3090"
+    },
+    {
+      "name": "vibgen-insight-hub",
+      "repository": "brownvase/vibgen-insight-hub",
+      "codebase": "brownvase/vibgen-insight-hub",
+      "console": "http://localhost:3090"
+    },
+    {
+      "name": "docreg",
+      "repository": "NITC-DocRegistry/docreg",
+      "codebase": "NITC-DocRegistry/docreg",
+      "console": "http://localhost:3090"
+    },
+    {
+      "name": "document-registry",
+      "repository": "NITC-DocRegistry/document-registry",
+      "codebase": "NITC-DocRegistry/document-registry",
       "console": "http://localhost:3090"
     }
   ]
