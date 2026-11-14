@@ -29,6 +29,12 @@
       "repository": "NITC-DocRegistry/document-registry",
       "codebase": "NITC-DocRegistry/document-registry",
       "console": "http://localhost:3090"
+    },
+    {
+      "name": "brownvase-health-ios",
+      "repository": "brownvase/brownvase-health-ios",
+      "codebase": "brownvase/brownvase-health-ios",
+      "console": "http://localhost:3090"
     }
   ]
 }
