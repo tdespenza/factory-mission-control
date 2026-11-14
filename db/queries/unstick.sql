@@ -14,22 +14,23 @@ FROM mc.issues i
 JOIN mc.factories f ON f.name = i.factory
 JOIN mc.work_item_states w ON w.project_key = f.codebase AND w.number = i.number AND w.stage = 'blocked'
 CROSS JOIN LATERAL (
-  SELECT count(*) AS n, count(g.at) AS gone, max(g.at) AS since,
+  SELECT count(*) AS n, count(greatest(gp.at, gi.at)) AS gone, max(greatest(gp.at, gi.at)) AS since,
     array_to_string(array_agg('#' || d.depends_on ORDER BY d.depends_on), ', ') AS waits_on,
-    array_agg(coalesce(g.title, '') ORDER BY d.depends_on) AS blocker_titles
+    array_agg(coalesce(least(gp.title, gi.title), '') ORDER BY d.depends_on) AS blocker_titles
   FROM mc.issue_dependencies d
-  -- Gone: closed or merged. A number that is not mirrored is not known to be gone.
+  -- Gone: closed or merged. A number that is not mirrored is not known to be gone. Neon Realtime rejects a
+  -- correlated reference inside a UNION ALL, so the pull request and the issue are two laterals;
+  -- greatest and least skip NULLs, which gives the max and min over both.
   LEFT JOIN LATERAL (
-    SELECT max(x.at) AS at, min(x.title) AS title FROM (
-      SELECT coalesce(p.merged_at, p.closed_at, p.updated_at) AS at, p.title
-      FROM mc.pull_requests p
-      WHERE p.factory = d.factory AND p.number = d.depends_on AND p.state = 'closed'
-      UNION ALL
-      SELECT coalesce(di.closed_at, di.updated_at), di.title
-      FROM mc.issues di
-      WHERE di.factory = d.factory AND di.number = d.depends_on AND di.state = 'closed'
-    ) x
-  ) g ON true
+    SELECT max(coalesce(p.merged_at, p.closed_at, p.updated_at)) AS at, min(p.title) AS title
+    FROM mc.pull_requests p
+    WHERE p.factory = d.factory AND p.number = d.depends_on AND p.state = 'closed'
+  ) gp ON true
+  LEFT JOIN LATERAL (
+    SELECT max(coalesce(di.closed_at, di.updated_at)) AS at, min(di.title) AS title
+    FROM mc.issues di
+    WHERE di.factory = d.factory AND di.number = d.depends_on AND di.state = 'closed'
+  ) gi ON true
   WHERE d.factory = i.factory AND d.issue_number = i.number
 ) b
 WHERE i.factory = $1 AND i.state = 'open' AND b.n > 0 AND b.gone = b.n
@@ -41,21 +42,20 @@ FROM mc.issues i
 JOIN mc.factories f ON f.name = i.factory
 JOIN mc.work_item_states w ON w.project_key = f.codebase AND w.number = i.number
 CROSS JOIN LATERAL (
-  SELECT count(*) AS n, count(g.at) AS gone, max(g.at) AS since,
+  SELECT count(*) AS n, count(greatest(gp.at, gi.at)) AS gone, max(greatest(gp.at, gi.at)) AS since,
     array_to_string(array_agg('#' || k.blocker ORDER BY k.blocker), ', ') AS waits_on,
-    array_agg(coalesce(g.title, '') ORDER BY k.blocker) AS blocker_titles
+    array_agg(coalesce(least(gp.title, gi.title), '') ORDER BY k.blocker) AS blocker_titles
   FROM mc.work_item_blockers k
   LEFT JOIN LATERAL (
-    SELECT max(x.at) AS at, min(x.title) AS title FROM (
-      SELECT coalesce(p.merged_at, p.closed_at, p.updated_at) AS at, p.title
-      FROM mc.pull_requests p
-      WHERE p.factory = i.factory AND p.number = k.blocker AND p.state = 'closed'
-      UNION ALL
-      SELECT coalesce(di.closed_at, di.updated_at), di.title
-      FROM mc.issues di
-      WHERE di.factory = i.factory AND di.number = k.blocker AND di.state = 'closed'
-    ) x
-  ) g ON true
+    SELECT max(coalesce(p.merged_at, p.closed_at, p.updated_at)) AS at, min(p.title) AS title
+    FROM mc.pull_requests p
+    WHERE p.factory = i.factory AND p.number = k.blocker AND p.state = 'closed'
+  ) gp ON true
+  LEFT JOIN LATERAL (
+    SELECT max(coalesce(di.closed_at, di.updated_at)) AS at, min(di.title) AS title
+    FROM mc.issues di
+    WHERE di.factory = i.factory AND di.number = k.blocker AND di.state = 'closed'
+  ) gi ON true
   WHERE k.project_key = w.project_key AND k.number = w.number
 ) b
 -- The Board's parked rule (`parked` in app/lib/board.ts), as health-workable.sql restates it.
